@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"sync"
@@ -246,5 +247,32 @@ func TestTools_Sluggify(t *testing.T) {
 			}
 		})
 
+	}
+}
+
+func TestTools_DownloadStaticFile(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	var testTool toolkit.Tools
+
+	testTool.DownloadStaticFile(rr, req, "./testdata", "pic.jpg", "puppy.jpg")
+
+	res := rr.Result()
+
+	defer res.Body.Close()
+
+	if res.Header.Get("Content-Length") != "98827" {
+		t.Error("wrong content length of", res.Header.Get("Content-Length"))
+	}
+
+	if res.Header.Get("Content-Disposition") != "attachment; filename=\"puppy.jpg\"" {
+		t.Error("wrong content disposition")
+	}
+
+	_, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		t.Error(err)
 	}
 }
